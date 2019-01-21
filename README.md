@@ -93,7 +93,7 @@ The following primitive types are supported:
 * object
 * file 
 
-Anything else is considere to be a complex type and has additional logic to retrieve information for.
+Anything else is considered to be a complex type and has additional logic to retrieve information for.
 
 ### Response
 
@@ -209,7 +209,7 @@ An example of this would be:
 		/**
 		 * @id showProfile
 		 * @swagger
-		 * This bit of documentation is specific to the showProfile method
+		 * This bit of documentation is specific to the actionFunction method
 		 */
 		function actionFunction(req, resp) {
 			
@@ -218,7 +218,7 @@ An example of this would be:
 		/**
 		 * @id anotherAction
 		 * @swagger
-		 * This bit of documentation is specific to the showProfile method
+		 * This bit of documentation is specific to the other method
 		 */
 		function actionFunction2(req, resp) {
 			

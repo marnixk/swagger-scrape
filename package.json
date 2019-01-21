@@ -12,7 +12,10 @@
   ],
   "author": "Marnix Kok <marnix@xinsolutions.co.nz>",
   "license": "Apache-2.0",
-
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marnixk/swagger-scrape.git"
+  },
   "devDependencies": {
     "lodash" : "^4.17.11",
     "jsdoc-api" : "^4.0.3"
