@@ -1,6 +1,6 @@
 {
   "name": "swagger-scrape",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Interfaces with JSDoc and custom doc tags to generate a complete Swagger Document",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "url": "git+https://github.com/marnixk/swagger-scrape.git"
   },
   "devDependencies": {
-    "lodash" : "^4.17.11",
-    "jsdoc-api" : "^4.0.3"
+    "lodash": "^4.17.11",
+    "jsdoc-api": "^4.0.3"
   }
 }
