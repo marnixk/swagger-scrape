@@ -15,6 +15,12 @@ Required packages:
 
 The following code will initialise the swagger documentation endpoints:
 
+	let appInfo = {
+	    version: "1.0.0",
+	    title: "Project Title",
+	    description: "Project Description",
+	};
+
 	
 	// assumed: app = the express js application instance
 

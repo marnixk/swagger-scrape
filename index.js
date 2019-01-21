@@ -529,9 +529,6 @@ let SwaggerScraper = _.extend(new function() {}, {
             definitions: definitions
         };
 
-
-        console.log(JSON.stringify(swaggerJson));
-
         return swaggerJson;
     }
 
