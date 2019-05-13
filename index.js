@@ -85,7 +85,7 @@ let SwaggerScraper = _.extend(new function() {}, {
             // a route can have multiple methods associated with it
             _.each(stack || [], (routeLayer) => {
 
-                let fileHint = extractFileHint(routeLayer.handle);
+                let fileHint = extractFileHint(routeLayer.handle) || '';
                 let docId = '';
 
                 if (fileHint.indexOf("::") !== -1) {
