@@ -71,47 +71,106 @@ function determineIsComplex(typeName) {
 
 let SwaggerScraper = _.extend(new function() {}, {
 
-    scrapeEndpoints : function(baseFolder, app) {
-
+ 
+    /**
+     * Is able to extract routes from the routing information in a routeContainer object
+     * of express js application instance type.
+     *
+     * @param app       the exprerss js application instance.
+     * @return a l;ist of route handlers
+     */
+    expressRoutes : function(app) {
         let stack = app._router.stack;
         let withRoute = _.filter(stack, (s) => { return !!s.route });
-        let endpoints = [];
+        let routeLayers = [];
 
         _.each(withRoute, (layer) => {
             let route = layer.route;
             let stack = layer.route.stack;
 
-
-            // a route can have multiple methods associated with it
+            // iterate over all route layers and gather their information
             _.each(stack || [], (routeLayer) => {
+                let routeClone = _.clone(routeLayer);
+                routeClone.path = route.path;
+                routeLayers.push(routeClone);
+            });
+        });
 
-                let fileHint = extractFileHint(routeLayer.handle) || '';
-                let docId = '';
+        return routeLayers;
+    },
 
-                if (fileHint.indexOf("::") !== -1) {
-                    let hintSplit = fileHint.split("::");
+    /**
+     * Extract lambda routing information.
+     *
+     * @param endpointsMap      the endpoints map implementation
+     * @returns {[]}            a simple
+     */
+    lambdaRoutes : function(endpointsMap) {
 
-                    if (hintSplit.length !== 2) {
-                        throw new Error("File hint with document identifier should only contain 1 :: (for: " + fileHint + ")");
-                    }
+        let routes = [];
+        const methods = _.keys(endpointsMap);
 
-                    fileHint = hintSplit[0];
-                    docId = hintSplit[1];
+        _.each(methods, (method) => {
+            const methodEndpoints = _.keys(endpointsMap[method]);
+
+            _.each(methodEndpoints, (endpoint) => {
+                routes.push({
+                    path: endpoint,
+                    method: method,
+                    handle: endpointsMap[method][endpoint]
+                });
+            });
+        });
+
+        return routes;
+    },
+
+
+    /**
+     * Scrape endpoints with the required swagger scraper syntax by using either a custom routeProvider
+     * other using the default expressRoutes implementation.
+     *
+     * @param baseFolder            the base folder to associate file hint filenames with
+     * @param routeContainer        the routeContainer to look inside of for routing information
+     * @param routeProvider         the routeProvider extraction logic.
+     * @returns {[]}                an array of all endpoint information we found.
+     */
+    scrapeEndpoints : function(baseFolder, routeContainer, routeProvider = SwaggerScraper.expressRoutes) {
+
+        let endpoints = [];
+
+        let routeLayers = routeProvider(routeContainer);
+
+        // a route can have multiple methods associated with it
+        _.each(routeLayers, (routeLayer) => {
+
+            let fileHint = extractFileHint(routeLayer.handle) || '';
+            let docId = '';
+
+            if (fileHint.indexOf("::") !== -1) {
+                let hintSplit = fileHint.split("::");
+
+                if (hintSplit.length !== 2) {
+                    throw new Error("File hint with document identifier should only contain 1 :: (for: " + fileHint + ")");
                 }
 
-                endpoints.push({
-                    path: route.path,
-                    method: routeLayer.method,
-                    handler: routeLayer.handle,
-                    fileHint: fileHint,
-                    docId: docId,
-                    jsDoc: fileHint ? jsdoc.explainSync({files: baseFolder + fileHint}) : ''
-                });
-            })
+                fileHint = hintSplit[0];
+                docId = hintSplit[1];
+            }
+
+            endpoints.push({
+                path: routeLayer.path,
+                method: routeLayer.method,
+                handler: routeLayer.handle,
+                fileHint: fileHint,
+                docId: docId,
+                jsDoc: fileHint ? jsdoc.explainSync({files: baseFolder + fileHint}) : ''
+            });
         });
 
         return endpoints;
     },
+
 
     /**
      * All the endpoints will get converted to a map
