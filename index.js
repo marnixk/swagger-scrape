@@ -1,15 +1,15 @@
-/* 
+/*
 
-     APL 2.0 license applies 
+     APL 2.0 license applies
 
      Author: Marnix Kok <marnix@xinsolutions.co.nz>
 
-     ____                                       ____                                 
-    / ___|_      ____ _  __ _  __ _  ___ _ __  / ___|  ___ _ __ __ _ _ __   ___ _ __ 
+     ____                                       ____
+    / ___|_      ____ _  __ _  __ _  ___ _ __  / ___|  ___ _ __ __ _ _ __   ___ _ __
     \___ \ \ /\ / / _` |/ _` |/ _` |/ _ \ '__| \___ \ / __| '__/ _` | '_ \ / _ \ '__|
-     ___) \ V  V / (_| | (_| | (_| |  __/ |     ___) | (__| | | (_| | |_) |  __/ |   
-    |____/ \_/\_/ \__,_|\__, |\__, |\___|_|    |____/ \___|_|  \__,_| .__/ \___|_|   
-                        |___/ |___/                                 |_|              
+     ___) \ V  V / (_| | (_| | (_| |  __/ |     ___) | (__| | | (_| | |_) |  __/ |
+    |____/ \_/\_/ \__,_|\__, |\__, |\___|_|    |____/ \___|_|  \__,_| .__/ \___|_|
+                        |___/ |___/                                 |_|
 
 
     Purpose:
@@ -71,7 +71,7 @@ function determineIsComplex(typeName) {
 
 let SwaggerScraper = _.extend(new function() {}, {
 
- 
+
     /**
      * Is able to extract routes from the routing information in a routeContainer object
      * of express js application instance type.
@@ -469,7 +469,7 @@ let SwaggerScraper = _.extend(new function() {}, {
         );
 
         if (mainDef.length === 0) {
-            console.error("Cannot find the definition");
+            console.error("[SWAGGER]: Cannot find the definition for:", model.name);
             return null;
         }
 
@@ -555,6 +555,9 @@ let SwaggerScraper = _.extend(new function() {}, {
         _.each(models, (model) => {
             let definitions = thiz._transformObjectToDefinition(model);
             _.each(_.flatten([definitions]), (def) => {
+                if (!def) {
+                    return;
+                }
                 map[def.title] = def;
             })
         });
