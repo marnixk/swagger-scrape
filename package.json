@@ -1,6 +1,6 @@
 {
   "name": "swagger-scrape",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Interfaces with JSDoc and custom doc tags to generate a complete Swagger Document",
   "main": "index.js",
   "scripts": {
