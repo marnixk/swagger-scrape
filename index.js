@@ -207,10 +207,13 @@ let SwaggerScraper = _.extend(new function() {}, {
      */
     _getSwaggerDoc : function(jsDoc, id) {
         return _.find(jsDoc, (el) => {
+            
+            const idRegexp = new RegExp(`@id ${id}\\s+`);
+
             return (
                 el.kind === 'function' &&
                 el.comment.indexOf('@swagger') !== -1 && (
-                    id ? el.comment.indexOf("@id " + id) !== -1 : true
+                    id ? el.comment.match(idRegexp) !== null : true
                 )
             );
         });
