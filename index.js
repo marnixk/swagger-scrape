@@ -587,6 +587,7 @@ let SwaggerScraper = _.extend(new function() {}, {
             swagger: "2.0",
             info: info,
             host: host,
+			schemes: ['http', 'https'],
             basePath: basePath,
             consumes: [ "application/json" ],
             produces: [ "application/json" ],
