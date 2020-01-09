@@ -489,7 +489,7 @@ let SwaggerScraper = _.extend(new function() {}, {
 
 
             let array = false;
-            let typeName = varEl.type.names[0];
+            let typeName = varEl.type ? varEl.type.names[0] : 'string'
 
             if (typeName.startsWith("Array.<")) {
                 array = true;
