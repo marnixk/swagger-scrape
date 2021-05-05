@@ -189,7 +189,10 @@ let SwaggerScraper = _.extend(new function() {}, {
             }
 
             // add swagger information
-            pathsMap[endpoint.path][endpoint.method] = thiz._endpointToSwagger(endpoint, models);
+            const swaggerEndpoint = thiz._endpointToSwagger(endpoint, models);
+            if (swaggerEndpoint) {
+                pathsMap[endpoint.path][endpoint.method] = swaggerEndpoint;
+            }
         });
 
         return pathsMap;
@@ -207,7 +210,7 @@ let SwaggerScraper = _.extend(new function() {}, {
      */
     _getSwaggerDoc : function(jsDoc, id) {
         return _.find(jsDoc, (el) => {
-            
+
             const idRegexp = new RegExp(`@id ${id}\\s+`);
 
             return (
@@ -439,7 +442,13 @@ let SwaggerScraper = _.extend(new function() {}, {
         let swagTag = this._getTagsWithTitle(swaggerNode, 'swagger');
         let tagTags = this._getTagsWithTitle(swaggerNode, 'tag');
         let responseTags = this._getTagsWithTitle(swaggerNode, 'response');
-        let endpointId = endpoint.method + "_" + endpoint.path.replace(/[^a-zA-Z]/g, '');
+
+        if (_.isEmpty(swagTag)) {
+            return null;
+        }
+
+        const path = _.isArray(endpoint.path) ? _.first(endpoint.path) : endpoint.path;
+        let endpointId = endpoint.method + "_" + path.replace(/[^a-zA-Z]/g, '');
 
         return {
             summary: swaggerNode.summary,
@@ -587,7 +596,7 @@ let SwaggerScraper = _.extend(new function() {}, {
             swagger: "2.0",
             info: info,
             host: host,
-			schemes: ['http', 'https'],
+            schemes: ['http', 'https'],
             basePath: basePath,
             consumes: [ "application/json" ],
             produces: [ "application/json" ],
