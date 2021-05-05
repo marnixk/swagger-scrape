@@ -19,6 +19,9 @@ The following code will initialise the swagger documentation endpoints:
 	    version: "1.0.0",
 	    title: "Project Title",
 	    description: "Project Description",
+	    common: [
+	    	/* files that contains jsdoc common across the endpoints */
+	    ]
 	};
 
 	
@@ -54,10 +57,10 @@ What follows is a completely annotated function that produces a proper swagger d
 	 * @param req       the request object
 	 * @param resp      the reponse object
 	 *
-	 * @param pathParameter (path) {integer} part of the url
-	 * @param queryParam	(query) {string} part of the requestquery (?queryParam=blaat)
-	 * @param headerParam	(header) {string} expected header value from request headers
-	 * @param bodyModel 	(body) {ExpectedModel} This is a complex type parameter that has a proper type hint.
+	 * @param pathParameter {number} (path) part of the url
+	 * @param queryParam	{string} (query) part of the requestquery (?queryParam=blaat)
+	 * @param headerParam	{string} (header) expected header value from request headers
+	 * @param bodyModel 	{ExpectedModel} (body) This is a complex type parameter that has a proper type hint.
 	 *
 	 * @response 403    You cannot go here.
 	 * @response 200    {ExpectedModel} all is well, information is returned in complex type.
@@ -175,6 +178,9 @@ Notice how you can specify arrays by appending the typename with `[]`.
 
 Also note how the `AddressModel` is another complex type. The scraper recursively resolves them in the same document.
 
+You can also use the `@typedef` notation described here: 
+
+* https://jsdoc.app/tags-typedef.html
 
 
 ## Hinting at where the documentation lives

@@ -155,7 +155,7 @@ let SwaggerScraper = _.extend(new function() {}, {
                 }
 
                 fileHint = hintSplit[0];
-                docId = hintSplit[1];
+                docId = _.first(hintSplit[1].match(/^\w+/));
             }
 
             endpoints.push({
@@ -450,7 +450,7 @@ let SwaggerScraper = _.extend(new function() {}, {
         const path = _.isArray(endpoint.path) ? _.first(endpoint.path) : endpoint.path;
         let endpointId = endpoint.method + "_" + path.replace(/[^a-zA-Z]/g, '');
 
-        return {
+        const result = {
             summary: swaggerNode.summary,
             tags: _.map(tagTags, function(tag){ return trim(tag.text); }),
             id: endpointId,
@@ -459,9 +459,82 @@ let SwaggerScraper = _.extend(new function() {}, {
             parameters: this._parameterMap(endpoint.jsDoc, swaggerNode.params || [], models),
             responses: this._responseMap(endpoint.jsDoc, responseTags || [], models),
             deprecated: false
-        }
+        };
+
+        return result;
     },
 
+    _transformTypedefToDefinition : function(model, commonJsDoc) {
+
+        const thiz = this;
+        let results = [];
+
+        const allJsDoc = _.flatten([model.jsDoc, commonJsDoc]);
+        const mainDef = _.filter(allJsDoc, (el) => el && el.kind === 'typedef' && el.name === model.name);
+
+        if (mainDef.length === 0) {
+            console.error("[SWAGGER]: Cannot find the definition for:", model.name);
+            return null;
+        }
+
+        let props = {};
+        let reqProps = [];
+        for (const varEl of _.first(mainDef).properties) {
+
+
+            let array = false;
+            let typeName = varEl.type ? varEl.type.names[0] : 'string'
+
+            if (typeName.startsWith("[ 'Array' ].<")) {
+                array = true;
+                typeName = typeName.substring("[ 'Array' ].<".length, typeName.length - 1);
+            }
+
+            let complex = determineIsComplex(typeName);
+            let typeSchema =
+                complex ? { "$ref" : "#/definitions/" + typeName }
+                        : { "type" : typeName }
+            ;
+
+            if (array) {
+                props[varEl.name] = {
+                    type: 'array',
+                    items: typeSchema
+                }
+            }
+            else {
+                props[varEl.name] = typeSchema;
+            }
+
+            // recurse find the complex sub item type
+            if (complex) {
+                let lookingForModel = {
+                    name: typeName,
+                    jsDoc: model.jsDoc
+                };
+
+                let subModels = thiz._transformTypedefToDefinition(lookingForModel, commonJsDoc) || [];
+
+                // add to results
+                _.each(subModels, (addMe) => results.push(addMe));
+            }
+
+            // is it a required field?
+            let reqTags = thiz._getTagsWithTitle(varEl, "required");
+            if (reqTags.length > 0) {
+                reqProps.push(varEl.name);
+            }
+        }
+
+        results.push({
+            type: "object",
+            title: model.name,
+            properties: props,
+            required: reqProps
+        });
+
+        return results;
+    },
 
     /**
      * Transform an object with comments to a swagger definition
@@ -470,18 +543,19 @@ let SwaggerScraper = _.extend(new function() {}, {
      * @returns {*}
      * @private
      */
-    _transformObjectToDefinition: function(model) {
+    _transformObjectToDefinition: function(model, commonJsDoc) {
         let thiz = this;
         let results = [];
 
         // find all model definitions
-        let mainDef = _.filter(model.jsDoc, (el) => (
+        const allJsDoc = _.flatten([model.jsDoc, commonJsDoc]);
+        let mainDef = _.filter(allJsDoc, (el) => (
+            el &&
             (el.comment || '').indexOf('@model') !== -1) &&
             el.name === model.name
         );
 
         if (mainDef.length === 0) {
-            console.error("[SWAGGER]: Cannot find the definition for:", model.name);
             return null;
         }
 
@@ -495,8 +569,6 @@ let SwaggerScraper = _.extend(new function() {}, {
         let reqProps = [];
 
         _.each(elements, (varEl) => {
-
-
             let array = false;
             let typeName = varEl.type ? varEl.type.names[0] : 'string'
 
@@ -528,7 +600,7 @@ let SwaggerScraper = _.extend(new function() {}, {
                     jsDoc: model.jsDoc
                 };
 
-                let subModels = thiz._transformObjectToDefinition(lookingForModel) || [];
+                let subModels = thiz._transformObjectToDefinition(lookingForModel, commonJsDoc) || [];
 
                 // add to results
                 _.each(subModels, (addMe) => results.push(addMe));
@@ -560,12 +632,21 @@ let SwaggerScraper = _.extend(new function() {}, {
      * @returns {null}
      * @private
      */
-    _generateDefinitions : function(models) {
+    _generateDefinitions : function(models, commonJsDoc) {
         let thiz = this;
         let map = {};
 
-        _.each(models, (model) => {
-            let definitions = thiz._transformObjectToDefinition(model);
+        // make sure to process them once
+        const uniqModels = _.uniqBy(models, (m) => m.name);
+
+        // iterate and try to get it
+        _.each(uniqModels, (model) => {
+            let definitions = thiz._transformObjectToDefinition(model, commonJsDoc);
+
+            if (definitions === null) {
+                definitions = thiz._transformTypedefToDefinition(model, commonJsDoc);
+            }
+
             _.each(_.flatten([definitions]), (def) => {
                 if (!def) {
                     return;
@@ -589,8 +670,10 @@ let SwaggerScraper = _.extend(new function() {}, {
      */
     toSwaggerJson : function(info, host, basePath, endpoints) {
         let models = [];
+        const commonJsDoc = jsdoc.explainSync({files: info.common});
+
         let paths = this._allEndpointsToSwagger(endpoints, models);
-        let definitions = this._generateDefinitions(models) || [];
+        let definitions = this._generateDefinitions(models, commonJsDoc) || [];
 
         let swaggerJson = {
             swagger: "2.0",
