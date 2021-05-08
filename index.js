@@ -158,8 +158,15 @@ let SwaggerScraper = _.extend(new function() {}, {
                 docId = _.first(hintSplit[1].match(/^\w+/));
             }
 
+            // make express js path matching with the swagger version
+            const replacementPath =
+                _.isArray(routeLayer.path)
+                    ? _.map(routeLayer.path, (x) => x.replace(/:(\w+)/g, "{$1}"))
+                    : routeLayer.path.replace(/:(\w+)/g, "{$1}")
+            ;
+
             endpoints.push({
-                path: routeLayer.path,
+                path: replacementPath,
                 method: routeLayer.method,
                 handler: routeLayer.handle,
                 fileHint: fileHint,
