@@ -477,61 +477,84 @@ let SwaggerScraper = _.extend(new function() {}, {
             return null;
         }
 
+        const firstMainDef = _.first(mainDef);
+
         let props = {};
         let reqProps = [];
-        for (const varEl of _.first(mainDef).properties) {
+
+        // if it has properties add them.
+        if (firstMainDef.properties) {
+            for (const varEl of _.first(mainDef).properties) {
 
 
-            let array = false;
-            let typeName = varEl.type ? varEl.type.names[0] : 'string'
+                let array = false;
+                let typeName = varEl.type ? varEl.type.names[0] : 'string'
 
-            if (typeName.startsWith("[ 'Array' ].<")) {
-                array = true;
-                typeName = typeName.substring("[ 'Array' ].<".length, typeName.length - 1);
-            }
-
-            let complex = determineIsComplex(typeName);
-            let typeSchema =
-                complex ? { "$ref" : "#/definitions/" + typeName }
-                        : { "type" : typeName }
-            ;
-
-            if (array) {
-                props[varEl.name] = {
-                    type: 'array',
-                    items: typeSchema
+                if (typeName.startsWith("[ 'Array' ].<")) {
+                    array = true;
+                    typeName = typeName.substring("[ 'Array' ].<".length, typeName.length - 1);
                 }
-            }
-            else {
-                props[varEl.name] = typeSchema;
-            }
 
-            // recurse find the complex sub item type
-            if (complex) {
-                let lookingForModel = {
-                    name: typeName,
-                    jsDoc: model.jsDoc
-                };
+                let complex = determineIsComplex(typeName);
+                let typeSchema =
+                    complex ? {"$ref": "#/definitions/" + typeName}
+                        : {"type": typeName}
+                ;
 
-                let subModels = thiz._transformTypedefToDefinition(lookingForModel, commonJsDoc) || [];
+                if (array) {
+                    props[varEl.name] = {
+                        type: 'array',
+                        items: typeSchema
+                    }
+                } else {
+                    props[varEl.name] = typeSchema;
+                }
 
-                // add to results
-                _.each(subModels, (addMe) => results.push(addMe));
-            }
+                // recurse find the complex sub item type
+                if (complex) {
+                    let lookingForModel = {
+                        name: typeName,
+                        jsDoc: model.jsDoc
+                    };
 
-            // is it a required field?
-            let reqTags = thiz._getTagsWithTitle(varEl, "required");
-            if (reqTags.length > 0) {
-                reqProps.push(varEl.name);
+                    let subModels = thiz._transformTypedefToDefinition(lookingForModel, allJsDoc) || [];
+
+                    // add to results
+                    _.each(subModels, (addMe) => results.push(addMe));
+                }
+
+                // is it a required field?
+                let reqTags = thiz._getTagsWithTitle(varEl, "required");
+                if (reqTags.length > 0) {
+                    reqProps.push(varEl.name);
+                }
             }
         }
 
-        results.push({
+        const obj = {
             type: "object",
             title: model.name,
             properties: props,
             required: reqProps
-        });
+        };
+
+        if (firstMainDef.type && !_.isEmpty(firstMainDef.type.names)) {
+            const parentTypeName = firstMainDef.type.names[0];
+            const lookingForModel = { name: parentTypeName, jsDoc: model.jsDoc };
+            const parentModel = thiz._transformTypedefToDefinition(lookingForModel, allJsDoc);
+
+            if (_.isEmpty(parentModel)) {
+                throw new Error("Could not find parent type " + parentTypeName + " for " + model.name);
+            }
+            parentModel.forEach(model => results.push(model));
+
+            obj.allOf = [{
+                "type" : parentTypeName,
+                "$ref" : "#/definitions/" + parentTypeName
+            }];
+        }
+
+        results.push(obj);
 
         return results;
     },
