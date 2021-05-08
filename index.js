@@ -497,8 +497,9 @@ let SwaggerScraper = _.extend(new function() {}, {
 
                 let complex = determineIsComplex(typeName);
                 let typeSchema =
-                    complex ? {"$ref": "#/definitions/" + typeName}
-                        : {"type": typeName}
+                    complex
+                        ? {"$ref": "#/definitions/" + typeName, description: varEl.description}
+                        : {"type": typeName, description: varEl.description}
                 ;
 
                 if (array) {
