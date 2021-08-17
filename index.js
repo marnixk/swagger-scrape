@@ -501,6 +501,10 @@ let SwaggerScraper = _.extend(new function() {}, {
                     array = true;
                     typeName = typeName.substring("[ 'Array' ].<".length, typeName.length - 1);
                 }
+                else if (typeName.startsWith("Array.<")) {
+                    array = true;
+                    typeName = typeName.substring("Array.<".length, typeName.length - 1);
+                }
 
                 let complex = determineIsComplex(typeName);
                 let typeSchema =
