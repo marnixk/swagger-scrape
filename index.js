@@ -705,7 +705,7 @@ let SwaggerScraper = _.extend(new function() {}, {
      */
     toSwaggerJson : function(info, host, basePath, endpoints) {
         let models = [];
-        const commonJsDoc = jsdoc.explainSync({files: info.common});
+        const commonJsDoc = info.common ? jsdoc.explainSync({files: info.common}) : [];
 
         let paths = this._allEndpointsToSwagger(endpoints, models);
         let definitions = this._generateDefinitions(models, commonJsDoc) || [];
