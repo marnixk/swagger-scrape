@@ -462,7 +462,7 @@ let SwaggerScraper = _.extend(new function() {}, {
             tags: _.map(tagTags, function(tag){ return trim(tag.text); }),
             id: endpointId,
             description: getText(swagTag),
-            operationId: "",
+            operationId: endpointId,
             parameters: this._parameterMap(endpoint.jsDoc, swaggerNode.params || [], models),
             responses: this._responseMap(endpoint.jsDoc, responseTags || [], models),
             deprecated: false
