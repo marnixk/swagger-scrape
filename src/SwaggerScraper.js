@@ -1,7 +1,7 @@
 import _ from "lodash";
 import jsdoc from "jsdoc-api";
 import {TypedefInterpreter} from "./TypedefInterpreter";
-import {isComplexType} from "./TypeHelper";
+import {getTagsWithTitle, isComplexType} from "./TypeHelper";
 
 /**
  * A list of valid request parameter types
@@ -180,15 +180,15 @@ export class SwaggerScraper {
 
         const swaggerNode = this._getSwaggerDoc(endpoint.jsDoc, endpoint.docId) || {};
 
-        let swagTag = this._getTagsWithTitle(swaggerNode, 'swagger');
+        let swagTag = getTagsWithTitle(swaggerNode, 'swagger');
 
         // the jsdoc block does not contain '@swagger'
         if (_.isEmpty(swagTag)) {
             return null;
         }
 
-        const tagTags = this._getTagsWithTitle(swaggerNode, 'tag');
-        const responseTags = this._getTagsWithTitle(swaggerNode, 'response');
+        const tagTags = getTagsWithTitle(swaggerNode, 'tag');
+        const responseTags = getTagsWithTitle(swaggerNode, 'response');
 
         const path = _.isArray(endpoint.path) ? endpoint.path[0] : endpoint.path;
         const endpointId = endpoint.method + "_" + path.replace(/[^a-zA-Z]/g, '');
@@ -258,24 +258,7 @@ export class SwaggerScraper {
         });
     }
 
-    /**
-     * Get tags from under a jsdoc node with a certain title
-     *
-     * @param node  the jsdoc node to query
-     * @param title the tag type we're looking for
-     * @returns {object[]} an array of tag information
-     * @private
-     */
-    _getTagsWithTitle(node, title) {
-        if (!node) {
-            return null;
-        }
 
-        // filter out all tags that have a title `title`.
-        return node.tags.filter((tags) => {
-            return tags.title === title;
-        });
-    }
 
     /**
      * This method iterates over the "@response" tag array and is able to

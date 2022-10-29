@@ -16,16 +16,12 @@
 
 
 import _ from "lodash";
-import {isComplexType} from "./TypeHelper";
+import {getTagsWithTitle, isComplexType} from "./TypeHelper.js";
 
 /**
  * Code that helps interpret jsdoc into swagger spec models.
  */
 export class TypedefInterpreter {
-
-    constructor() {
-
-    }
 
     /**
      * Do transformation
@@ -34,7 +30,7 @@ export class TypedefInterpreter {
      * @param commonJsDoc A set of common jsdoc tags
      * @returns {null|*[]}
      */
-    jsdocToSwagger(model, commonJsDoc) {
+    jsdocToSwagger(model, commonJsDoc = []) {
 
         let results = [];
 
@@ -93,13 +89,20 @@ export class TypedefInterpreter {
                 // TODO: test whether submodels referring to itself causes infinite loopage
                 let subModels = this.jsdocToSwagger(lookingForModel, allJsDoc) || [];
 
-                // add to results
-                _.each(subModels, (addMe) => results.push(addMe));
+                // add to results if it doesn't exist yet.
+                const knownModels = results.map(m => m.title);
+                for (const addMe of subModels) {
+                    if (knownModels.includes(addMe.title)) {
+                        continue;
+                    }
+
+                    results.push(addMe);
+                }
             }
 
             // is it a required field?
-            let reqTags = thiz._getTagsWithTitle(varEl, "required");
-            if (reqTags.length > 0) {
+            let reqTags = getTagsWithTitle(varEl, "required");
+            if (reqTags?.length > 0) {
                 reqProps.push(varEl.name);
             }
         }

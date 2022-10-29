@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "Interfaces with JSDoc and custom doc tags to generate a complete Swagger Document (ESM)",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

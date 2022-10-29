@@ -16,10 +16,10 @@
 /**
  * @typedef LambdaEndpointsMap
  *
- * @property {object} get - list of GET-endpoints
- * @property {object} post - list of POST-endpoints
- * @property {object} put - list of PUT-endpoints
- * @property {object} delete - list of DELETE-endpoints
+ * @property {?object} get - list of GET-endpoints
+ * @property {?object} post - list of POST-endpoints
+ * @property {?object} put - list of PUT-endpoints
+ * @property {?object} delete - list of DELETE-endpoints
  */
 
 
@@ -60,7 +60,7 @@ export class LambdaRouteProvider {
 
                 routes.push({
                     path: endpoint,
-                    method: method,
+                    method: method.toLowerCase(),
                     handle: this.endpointsMap[method][endpoint]
                 });
             }
