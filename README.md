@@ -4,6 +4,9 @@ The purpose of this module is to generate Swagger documentation from the JSDoc t
 
 Feedback is welcome. 
 
+**NOTE:** If you're looking for the CommonJS implementation, use the latest from the `1.x` version range. 
+
+
 ## How to initialise
 
 You'll need an ExpressJS application. Find the point at which you have initialised the endpoints.
