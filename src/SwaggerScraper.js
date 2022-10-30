@@ -1,7 +1,7 @@
 import _ from "lodash";
 import jsdoc from "jsdoc-api";
-import {TypedefInterpreter} from "./TypedefInterpreter";
-import {getTagsWithTitle, isComplexType} from "./TypeHelper";
+import {TypedefInterpreter} from "./TypedefInterpreter.js";
+import {getTagsWithTitle, isComplexType} from "./TypeHelper.js";
 
 /**
  * A list of valid request parameter types
@@ -73,7 +73,7 @@ export class SwaggerScraper {
             info: info,
             host: host,
             schemes: ['http', 'https'],
-            basePath: basePath,
+            basePath: this.baseFolder,
             consumes: ["application/json"],
             produces: ["application/json"],
             paths: paths,
@@ -102,8 +102,12 @@ export class SwaggerScraper {
             //
             //  Try to extract @fileHint from the function handler
             //
-            let fileHint = this._extractFileHint(routeLayer.handle) || '';
+            let fileHint = this._extractFileHint(routeLayer.handle, routeLayer.path);
             let docId = '';
+
+            if (!fileHint) {
+                continue;
+            }
 
             //
             //  If @fileHint of format <Filename>::<SwaggerId> extract swagger id.
@@ -163,6 +167,9 @@ export class SwaggerScraper {
             if (swaggerEndpoint) {
                 pathsMap[endpoint.path][endpoint.method] = swaggerEndpoint;
             }
+            else {
+                console.error("[SwaggerScraper] Could not interpret jsdoc for @fileHint: " + endpoint.fileHint + "::" + endpoint.docId + ". Does it exist?");
+            }
         }
 
         return pathsMap;
@@ -216,13 +223,20 @@ export class SwaggerScraper {
      * @returns {string|null}
      * @private
      */
-    _extractFileHint(func)  {
+    _extractFileHint(func, path)  {
         let raw = func.toString();
         let start = raw.indexOf("@fileHint:");
         if (start === -1) {
+            console.error("[SwaggerScraper] Skipping endpoint, @fileHint in handler function for", path, "not found.");
             return null;
         }
         let nextSemiColon = raw.indexOf(";", start);
+
+        if (nextSemiColon === -1) {
+            console.error("[SwaggerScraper] Could not find semi-colon on @fileHint line for endpoint `" + path + "`");
+            return null;
+        }
+
         let instr = raw.substring(start, nextSemiColon);
         let fileStart = instr.indexOf(":");
 
@@ -245,7 +259,7 @@ export class SwaggerScraper {
      * @private
      */
     _getSwaggerDoc(jsDoc, id) {
-        return jsDoc.find((el) => {
+        return (jsDoc || []).find((el) => {
 
             const idRegexp = new RegExp(`@id ${id}\\s+`);
 

@@ -16,10 +16,11 @@
 /**
  * @typedef LambdaEndpointsMap
  *
- * @property {?object} get - list of GET-endpoints
- * @property {?object} post - list of POST-endpoints
- * @property {?object} put - list of PUT-endpoints
- * @property {?object} delete - list of DELETE-endpoints
+ * @property get - map of GET-endpoints
+ * @property post - map of POST-endpoints
+ * @property put - map of PUT-endpoints
+ * @property delete - map of DELETE-endpoints
+ * @property patch - map of DELETE-endpoints
  */
 
 

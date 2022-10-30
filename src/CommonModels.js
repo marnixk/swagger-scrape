@@ -13,6 +13,7 @@
  * @property {object} jsDoc - the jsdoc blob that belongs to the endpoint definition
  * @property {string} docId - a unique document identifier
  * @property {string} path - the path to the endpoint
+ * @property {string} fileHint - hint as to where to find the file that the handler lives in
  * @property {string} method - the method of the endpoint (get, post, put etc.)
  */
 

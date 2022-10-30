@@ -19,6 +19,6 @@
 
 */
 
-export {SwaggerScraper} from './src/SwaggerScraper';
+export {SwaggerScraper} from './src/SwaggerScraper.js';
 export {LambdaRouteProvider} from './src/LambdaRouteProvider.js';
 export {ExpressRouteProvider} from './src/ExpressRouteProvider.js';
