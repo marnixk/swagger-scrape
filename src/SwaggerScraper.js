@@ -216,16 +216,13 @@ export class SwaggerScraper {
     /**
      * Extract the @fileHint comment from a function's contents.
      *
-     * TODO: look at case-sensitivity for @fileHint annotation
-     * TODO: look at ditching semi-colon requirement, or better messaging.
-     *
      * @param func {Function} the function that we need to analyse
      * @returns {string|null}
      * @private
      */
     _extractFileHint(func, path)  {
         let raw = func.toString();
-        let start = raw.indexOf("@fileHint:");
+        let start = raw.toLowerCase().indexOf("@filehint:");
         if (start === -1) {
             console.error("[SwaggerScraper] Skipping endpoint, @fileHint in handler function for", path, "not found.");
             return null;
@@ -386,7 +383,7 @@ export class SwaggerScraper {
         // description = raw description - param type description
         const description = (
             param.description.replace(
-                (isRequired? "*" : "") + foundParamType,
+                (isRequired? "*" : "") + "(" + foundParamType + ")",
                 ""
             ).trim()
         );

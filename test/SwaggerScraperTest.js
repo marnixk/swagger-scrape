@@ -1,3 +1,4 @@
+import fs from 'fs';
 import {SwaggerScraper, LambdaRouteProvider} from "../index.js";
 
 
@@ -37,7 +38,9 @@ describe("Swagger Scraper", () => {
         };
 
         const swaggerJson = scraper.toSwaggerJson(appInfo, "localhost");
-        console.log(JSON.stringify(swaggerJson, null, 4));
+        const output = JSON.stringify(swaggerJson, null, 4);
+
+        fs.writeFileSync('./swagger-test.json', output);
 
     });
 

@@ -13,7 +13,7 @@
  * @summary This is an endpoint summary
  *
  * @param customerId {string} (path) the customer identifier
- * @param authorization {string} (header) authorization header used to auth user
+ * @param authorization {string} *(header) authorization header used to auth user
  * @param body {TestDefinition} (body) the payload to parse
  *
  * @response 200 {DetailedResponseModel} the thing to respond with
