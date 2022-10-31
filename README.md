@@ -1,22 +1,49 @@
 # Swagger Scraper
 
-The purpose of this module is to generate Swagger documentation from the JSDoc tags you have annotated your endpoint handlers with. It is able to interpret complex types as well.
+The purpose of this module is to generate Swagger documentation from the JSDoc tags you have annotated your endpoint handlers with. It is able to interpret complex types as well. 
+
+Your code will look like this:
+
+
+	/**
+	 * @swagger
+	 *
+	 * Just put the complete description here. It is the description that is shown when you click into a 
+	 * swagger endpoint in the interface.
+	 *
+	 * @summary This is the short text shown right next to the endpoint name
+	 * @tag TestEndpoint
+	 *
+	 * @param req       the request object
+	 * @param resp      the reponse object
+	 *
+	 * @param pathParameter {number} (path) part of the url
+	 * @param queryParam	{string} (query) part of the requestquery (?queryParam=blaat)
+	 * @param headerParam	{string} (header) expected header value from request headers
+	 * @param bodyModel 	{ExpectedModel} (body) This is a complex type parameter that has a proper type hint.
+	 *
+	 * @response 403    You cannot go here.
+	 * @response 200    {ExpectedModel} all is well, information is returned in complex type.
+	 */
+	export function yourEndpointHandlerFunction(req, resp) {
+
+		// your code here.
+
+	};
+
 
 Feedback is welcome. 
 
 **NOTE:** If you're looking for the CommonJS implementation, use the latest from the `1.x` version range. 
 
 
+
 ## How to initialise
 
-You'll need an ExpressJS application. Find the point at which you have initialised the endpoints.
-
-Required packages:
-
-* express-list-endpoints: ^4.0.0
-* swagger-ui-express: ^4.0.2
-
-The following code will initialise the swagger documentation endpoints:
+The following code will initialise the swagger documentation endpoints, convert them to a Swagger JSON Spec and write them to a file called `swagger.json`.
+	
+	import fs from 'fs';
+	import {SwaggerScraper, LambdaRouteProvider} from "swagger-scrape";
 
 	let appInfo = {
 	    version: "1.0.0",
@@ -24,24 +51,77 @@ The following code will initialise the swagger documentation endpoints:
 	    description: "Project Description",
 	    common: [
 	    	/* files that contains jsdoc common across the endpoints */
+	    	"./src/CommonModels.js"
 	    ]
 	};
 
-	
-	// assumed: app = the express js application instance
+    const lambdaRouteProvider = new LambdaRouteProvider(Endpoints);
+    const scraper = new SwaggerScraper(lambdaRouteProvider);
 
-	// include this dependency
-	const swaggerScrape = require('swagger-scrape');
+    const swaggerJson = scraper.toSwaggerJson(appInfo, "localhost");
+    const output = JSON.stringify(swaggerJson, null, 4);
 
-	// grab all endpoint information of endpoints registered with express js
-	let swaggerEndpoints = swaggerScrape.scrapeEndpoints("./", app);
+    fs.writeFileSync('./swagger.json', output);
 
-	// conver the endpoint information to a swagger document
-	let swaggerDoc = swaggerScrape.toSwaggerJson(appInfo, "hostname", "/application-context", swaggerEndpoints);
+After creating the `swagger.json` file you could turn it into a static HTML by calling `redoc-cli`.
+
+	$ redoc-cli bundle swagger.json -o your-file.html
+
+Now you have generated a complete Swagger HTML file. 
+
+If you do not have `redoc` installed, please install it by running:
+
+	$ npm install -g redoc
+
+Read on if you'd like to get more detailed information about how to properly use this module. If you're more code-inclined have a look at the code in `test/SwaggerScraperTest.js`.
+
+### Finding endpoints through RouteProviders
+
+A route provider is a class that has a function called `scrapeRoutes` which returns an array of `Route` objects. They have the following definition:
+
+	/**
+	 * @typedef Route
+	 *
+	 * @property {string|string[]} path - the path to the route
+	 * @property {string} method - the method used for the route
+	 * @property {function} handle - the function that is executed when the endpoint is invoked.
+	 */
+
+Out-of-the-box there are two existing RouteProvider implementations you can use:
+
+* `ExpressRouteProvider`: will find all registered endpoints for a ExpressJS `app` instance. To use, initialise it as follows: `new ExpressRouteProvider(app)` and feed it to the `SwaggerScraper`, it will now generate a Swagger Spec for endpoints annotated with swagger jsdocs.
+
+* `LambdaRouteProvider`: will find all registered endpoints from a map with the following structure -- assumed to be available in the `Endpoints` variable in the example above:
+
+
+	const Endpoints = {
+	    post: {
+	        '/test/:customerId': () => { /* @fileHint: test/actions/TestActions.js::test; */ },
+	    },
+
+	    get: {
+	        '/test2': () => {},
+	        '/test3': () => { /* @fileHint: test/actions/TestActions.js::test3; */ },
+	        '/test4': () => { /* @fileHint: test/actions/TestActions.js::test2 */ }
+	    }
+	};
+
+
+### How to initialise an ExpressJS application
+
+
+You'll need an ExpressJS application. Find the point at which you have initialised the endpoints.
+
+Required packages:
+
+* swagger-ui-express: ^4.0.2
+
+In addition to the example above, you can feed the Swagger JSON back into your ExpressJS app instance by exposing it as an endpoint as follows:
 
 	// expose the swagger ui based on the swagger doc at '/api-docs'.
-	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerJson));
 
+This is assuming `swaggerUi` is an import for `swagger-ui-express`
 
 ## Annotating your code
 
@@ -68,7 +148,7 @@ What follows is a completely annotated function that produces a proper swagger d
 	 * @response 403    You cannot go here.
 	 * @response 200    {ExpectedModel} all is well, information is returned in complex type.
 	 */
-	module.exports = function(req, resp) {
+	export function yourEndpointHandlerFunction(req, resp) {
 
 		// your code here.
 
@@ -115,80 +195,55 @@ Specifying a swagger response can be done by using the following notation:
 
 If no type is specified `string` is assumed. You can specify a complex type here as well.
 
-### Complex Types
+### Complex Types: `@typedef`
 
-When you specify a type name that is not a primitive, the swagger scraper uses the same file to try and find a constant of the name specified as the type name that was annotated with a `@model` jsdoc tag. 
+When you specify a type name that is not a primitive, the swagger scraper uses either:
 
-Fields inside the constant definition can be annotated with:
+* the same file; or 
+* files specified in the `appInfo.common` array. 
 
-* `@type {name}`; the type of this parameter
-* `@required`; if the parameter is required.
+.. to try and find a @typedef with the name referenced by the jsdoc tag.
 
-
-Find a nested model definition below:
-
-	/**
-	 * @model
-	 */
-	const AddressModel = {
-
-	    /**
-	     * @type {string}
-	     */
-	    street : '',
-
-	    /**
-	     * @type {number}
-	     */
-	    zipcode: 1010
-
-	}
-
-	/**
-	 * @model
-	 *
-	 * This is the empty response model
-	 */
-	const ExpectedModel = {
-
-	    /**
-	     * @type {number}
-	     * @required
-	     */
-	    age : 0,
-
-	    /**
-	     * @type {string}
-	     * @required
-	     */
-	    name: null,
-
-	    /**
-	     * @type {string[]}
-	     */
-	    lastNames : null,
-
-	    /**
-	     * @type {AddressModel}
-	     */
-	    address: null
-
-
-	};
-
-
-Notice how you can specify arrays by appending the typename with `[]`.
-
-Also note how the `AddressModel` is another complex type. The scraper recursively resolves them in the same document.
-
-You can also use the `@typedef` notation described here: 
+To better understand how `@typedef` works, read this:
 
 * https://jsdoc.app/tags-typedef.html
+
+Some simple examples can be found below:
+
+
+	/**
+	 * @typedef Subtype
+	 *
+	 * @property {number} integer - the number to store
+	 */
+
+	/**
+	 * @typedef TestDefinition
+	 *
+	 * @property {string} text - the text
+	 * @property {string[]} lines - the lines
+	 * @property {Subtype} subtype - complex subtypes
+	 * @property {Subtype[]} subtypeArray - complex subtypes
+	 */
+
+	/**
+	 * @typedef ResponseModel
+	 *
+	 * @property {string} message - the message to return
+	 * @property {number} statusCode - status code
+	 */
+
+	/**
+	 * @typedef {ResponseModel} DetailedResponseModel
+	 *
+	 * @property {string} additionalField - the additional information
+	 */
+
 
 
 ## Hinting at where the documentation lives
 
-Oftentimes when initialising endpoints into ExpressJS, you simply refer to a variable that is a closure or function with the signature:
+A lot of the time, when initialising endpoints, you simply refer to a variable that is a closure or function with a signature similar to:
 
 	function(req, resp) {}
 
@@ -213,33 +268,33 @@ The notation for filehint is as follows:
 
 	/* @fileHint: <filename>(::<id-name>); */
 
-The filename parameter is relative to the basepath passed into the scrapeEndpoints function (`./` in our example). 
+The filename parameter is relative to the basepath passed into the SwaggerScraper class' basePath (`./` by default). 
+
 There is an optional parameter called `<id-name>`. If you have a file that has more than one handler inside it, you can specify the `@id <id-name>` it will go looking for. Otherwise it will find the first `@swagger` annotated jsdoc block.
 
 An example of this would be:
 
 
-	module.exports = {
-
-		/**
-		 * @id showProfile
-		 * @swagger
-		 * This bit of documentation is specific to the actionFunction method
-		 */
-		function actionFunction(req, resp) {
-			
-		}
-
-		/**
-		 * @id anotherAction
-		 * @swagger
-		 * This bit of documentation is specific to the other method
-		 */
-		function actionFunction2(req, resp) {
-			
-		}
-
-
+	/**
+	 * @id showProfile
+	 * @swagger
+	 *
+	 * This bit of documentation is specific to the actionFunction method
+	 */
+	export function actionFunction(req, resp) {
+		
 	}
+
+	/**
+	 * @id anotherAction
+	 * @swagger
+	 *
+	 * This bit of documentation is specific to the other method
+	 */
+	export function actionFunction2(req, resp) {
+		
+	}
+
+
 
 
