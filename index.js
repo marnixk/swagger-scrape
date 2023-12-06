@@ -461,7 +461,7 @@ let SwaggerScraper = _.extend(new function() {}, {
             summary: swaggerNode.summary,
             tags: _.map(tagTags, function(tag){ return trim(tag.text); }),
             id: endpointId,
-            description: getText(swagTag),
+            description: swaggerNode.description? swaggerNode.description : getText(swagTag),
             operationId: endpointId,
             parameters: this._parameterMap(endpoint.jsDoc, swaggerNode.params || [], models),
             responses: this._responseMap(endpoint.jsDoc, responseTags || [], models),
