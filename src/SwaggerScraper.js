@@ -205,7 +205,7 @@ export class SwaggerScraper {
             operationId: endpointId,
             summary: swaggerNode.summary,
             tags: tagTags.map((tag) => tag.text.trim()),
-            description: getTagText(swagTag),
+            description: swaggerNode.description ?? getTagText(swagTag),
             parameters: this._parameterMap(endpoint.jsDoc, swaggerNode.params || [], models),
             responses: this._responseMap(endpoint.jsDoc, responseTags || [], models),
             deprecated: false
