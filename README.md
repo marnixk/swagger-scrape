@@ -40,6 +40,20 @@ The following code will initialise the swagger documentation endpoints:
 	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 
+### Reading multiple endpoint maps
+
+In certain situations you will require multiple endpoint maps to be parsed and converted into Swagger documentation. One 
+example being when using a solution that allows both `publicEndpoints` and protected `endpoints`. Use the
+code below to allow for that:
+    
+    const swaggerHost = process.env.SWAGGER_HOST || ('localhost:' + DEFAULT_PORT);
+    const swaggerEndpoints = SwaggerScrape.scrapeEndpoints("./", LambdaConfig.endpoints, SwaggerScrape.lambdaRoutes);
+    const publicSwaggerEndpoints = SwaggerScrape.scrapeEndpoints("./", LambdaConfig.publicEndpoints, SwaggerScrape.lambdaRoutes);
+    const swaggerDoc = SwaggerScrape.toSwaggerJson(appInfo, `${swaggerHost}`, "/", [...publicSwaggerEndpoints, ...swaggerEndpoints]);
+
+The code is scraped twice, and the resulting arrays in `swaggerEndpoints` and `publicSwaggerEndpoints` are combined
+when invoking the `toSwaggerJson` function.
+
 ## Annotating your code
 
 What follows is a completely annotated function that produces a proper swagger document:
